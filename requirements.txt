@@ -1,0 +1,14 @@
+#PromptFlow dependencies
+promptflow
+promptflow-tools
+promptflow-rag
+keyrings.alt
+pytest
+
+#Azure dependencies
+azureml-mlflow==1.53.0
+azure-search-documents
+azure-ai-generative[index,evaluate,promptflow]
+azure-ai-resources==1.0.0b3
+azure-ai-ml>=1.16.0
+azure-storage-file-datalake>=12.8.0

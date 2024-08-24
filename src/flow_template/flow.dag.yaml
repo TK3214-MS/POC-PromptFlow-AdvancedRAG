@@ -1,0 +1,282 @@
+id: bring_your_own_data_qna
+name: Bring Your Own Data QnA
+inputs:
+  question:
+    type: string
+    default: 就業規則について教えてください。?
+    is_chat_input: false
+outputs:
+  output:
+    type: string
+    reference: ${answer_the_question_with_context.output}
+nodes:
+- name: answer_the_question_with_context
+  type: llm
+  source:
+    type: code
+    path: answer_the_question_with_context.jinja2
+  inputs:
+    deployment_name: gpt-4o-mini
+    temperature: 0
+    top_p: 1
+    max_tokens: 1000
+    presence_penalty: 0
+    frequency_penalty: 0
+    prompt_text: ${Prompt_variants.output}
+  provider: AzureOpenAI
+  connection: openairagflow2_aoai
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: generate_search_query
+  type: llm
+  source:
+    type: code
+    path: generate_search_query.jinja2
+  inputs:
+    deployment_name: gpt-4o-mini
+    temperature: 1
+    top_p: 1
+    response_format:
+      type: text
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: openairagflow2_aoai
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: create_json_for_query
+  type: python
+  source:
+    type: code
+    path: create_json_for_query.py
+  inputs:
+    input1: ${generate_search_query.output}
+  use_variants: false
+- name: get_query00
+  type: python
+  source:
+    type: code
+    path: get_query.py
+  inputs:
+    input1: ${create_json_for_query.output}
+  use_variants: false
+- name: get_query01
+  type: python
+  source:
+    type: code
+    path: get_query01.py
+  inputs:
+    input1: ${create_json_for_query.output}
+  use_variants: false
+- name: get_query02
+  type: python
+  source:
+    type: code
+    path: get_query02.py
+  inputs:
+    input1: ${create_json_for_query.output}
+  use_variants: false
+- name: lookup00
+  type: python
+  source:
+    type: package
+    tool: promptflow_vectordb.tool.common_index_lookup.search
+  inputs:
+    mlindex_content: >
+      embeddings:
+        api_base: https://search-rag-flow.search.windows.net
+        api_type: azure
+        api_version: 2023-07-01-preview
+        batch_size: '1'
+        connection:
+          id: /subscriptions/7acd21d4-1790-4c1d-9b01-02b72929a038/resourceGroups/rg-rag-flow/providers/Microsoft.MachineLearningServices/workspaces/project-rag-flow/connections/openairagflow2_aoai
+        connection_type: workspace_connection
+        deployment: text-embedding-ada-002
+        dimension: 1536
+        kind: open_ai
+        model: text-embedding-ada-002
+        schema_version: '2'
+      index:
+        api_version: 2024-05-01-preview
+        connection:
+          id: /subscriptions/7acd21d4-1790-4c1d-9b01-02b72929a038/resourceGroups/rg-rag-flow/providers/Microsoft.MachineLearningServices/workspaces/project-rag-flow/connections/searchragflow
+        connection_type: workspace_connection
+        endpoint: https://search-rag-flow.search.windows.net
+        engine: azure-sdk
+        field_mapping:
+          content: content
+          embedding: contentVector
+          metadata: meta_json_string
+        index: sample-index
+        kind: acs
+        semantic_configuration_name: null
+    queries: ${get_query00.output}
+    query_type: Hybrid (vector + keyword)
+    top_k: 3
+  use_variants: false
+- name: lookup01
+  type: python
+  source:
+    type: package
+    tool: promptflow_vectordb.tool.common_index_lookup.search
+  inputs:
+    mlindex_content: >
+      embeddings:
+        api_base: https://search-rag-flow.search.windows.net
+        api_type: azure
+        api_version: 2023-07-01-preview
+        batch_size: '1'
+        connection:
+          id: /subscriptions/7acd21d4-1790-4c1d-9b01-02b72929a038/resourceGroups/rg-rag-flow/providers/Microsoft.MachineLearningServices/workspaces/project-rag-flow/connections/openairagflow2_aoai
+        connection_type: workspace_connection
+        deployment: text-embedding-ada-002
+        dimension: 1536
+        kind: open_ai
+        model: text-embedding-ada-002
+        schema_version: '2'
+      index:
+        api_version: 2024-05-01-preview
+        connection:
+          id: /subscriptions/7acd21d4-1790-4c1d-9b01-02b72929a038/resourceGroups/rg-rag-flow/providers/Microsoft.MachineLearningServices/workspaces/project-rag-flow/connections/searchragflow
+        connection_type: workspace_connection
+        endpoint: https://search-rag-flow.search.windows.net
+        engine: azure-sdk
+        field_mapping:
+          content: content
+          embedding: contentVector
+          metadata: meta_json_string
+        index: sample-index
+        kind: acs
+        semantic_configuration_name: null
+    queries: ${get_query01.output}
+    query_type: Hybrid (vector + keyword)
+    top_k: 3
+  use_variants: false
+- name: lookup02
+  type: python
+  source:
+    type: package
+    tool: promptflow_vectordb.tool.common_index_lookup.search
+  inputs:
+    mlindex_content: >
+      embeddings:
+        api_base: https://search-rag-flow.search.windows.net
+        api_type: azure
+        api_version: 2023-07-01-preview
+        batch_size: '1'
+        connection:
+          id: /subscriptions/7acd21d4-1790-4c1d-9b01-02b72929a038/resourceGroups/rg-rag-flow/providers/Microsoft.MachineLearningServices/workspaces/project-rag-flow/connections/openairagflow2_aoai
+        connection_type: workspace_connection
+        deployment: text-embedding-ada-002
+        dimension: 1536
+        kind: open_ai
+        model: text-embedding-ada-002
+        schema_version: '2'
+      index:
+        api_version: 2024-05-01-preview
+        connection:
+          id: /subscriptions/7acd21d4-1790-4c1d-9b01-02b72929a038/resourceGroups/rg-rag-flow/providers/Microsoft.MachineLearningServices/workspaces/project-rag-flow/connections/searchragflow
+        connection_type: workspace_connection
+        endpoint: https://search-rag-flow.search.windows.net
+        engine: azure-sdk
+        field_mapping:
+          content: content
+          embedding: contentVector
+          metadata: meta_json_string
+        index: sample-index
+        kind: acs
+        semantic_configuration_name: null
+    queries: ${get_query02.output}
+    query_type: Hybrid (vector + keyword)
+    top_k: 3
+  use_variants: false
+- name: generate_prompt_context
+  type: python
+  source:
+    type: code
+    path: generate_prompt_context.py
+  inputs:
+    search_result: ${lookup00.output}
+  use_variants: false
+- name: generate_prompt_context01
+  type: python
+  source:
+    type: code
+    path: generate_prompt_context01.py
+  inputs:
+    search_result: ${lookup01.output}
+  use_variants: false
+- name: generate_prompt_context02
+  type: python
+  source:
+    type: code
+    path: generate_prompt_context02.py
+  inputs:
+    search_result: ${lookup02.output}
+  use_variants: false
+- name: Prompt_variants00
+  type: llm
+  source:
+    type: code
+    path: Prompt_variants00.jinja2
+  inputs:
+    deployment_name: gpt-4o-mini
+    temperature: 1
+    top_p: 1
+    chunk: ${generate_prompt_context.output.chunk}
+    filename: ${generate_prompt_context.output.filename}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: openairagflow2_aoai
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: Prompt_variants01
+  type: llm
+  source:
+    type: code
+    path: Prompt_variants01.jinja2
+  inputs:
+    deployment_name: gpt-4o-mini
+    temperature: 1
+    top_p: 1
+    chunk: ${generate_prompt_context01.output.chunk}
+    filename: ${generate_prompt_context01.output.filename}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: openairagflow2_aoai
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: Prompt_variants02
+  type: llm
+  source:
+    type: code
+    path: Prompt_variants02.jinja2
+  inputs:
+    deployment_name: gpt-4o-mini
+    temperature: 1
+    top_p: 1
+    chunk: ${generate_prompt_context02.output.chunk}
+    filename: ${generate_prompt_context02.output.filename}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: openairagflow2_aoai
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: Prompt_variants
+  type: prompt
+  source:
+    type: code
+    path: Prompt_variants.jinja2
+  inputs:
+    contexts1: ${Prompt_variants00.output}
+    contexts2: ${Prompt_variants01.output}
+    contexts3: ${Prompt_variants02.output}
+    question: ${inputs.question}
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt
